@@ -1,6 +1,6 @@
 # Translation of OpenERP Server.
 # This file contains the translation of the following modules:
-# 	* mrp_production_properties
+# 	* mrp_production_property
 #
 msgid ""
 msgstr ""
@@ -16,17 +16,17 @@ msgstr ""
 "X-Launchpad-Export-Date: 2014-06-22 05:52+0000\n"
 "X-Generator: Launchpad (build 17058)\n"
 
-#. module: mrp_production_properties
-#: model:ir.model,name:mrp_production_properties.model_mrp_production
+#. module: mrp_production_property
+#: model:ir.model,name:mrp_production_property.model_mrp_production
 msgid "Manufacturing Order"
 msgstr "Ordine di Produzione"
 
-#. module: mrp_production_properties
+#. module: mrp_production_property
 #: field:mrp.production,property_ids:0
 msgid "Properties"
 msgstr "Proprietà"
 
-#. module: mrp_production_properties
-#: model:ir.model,name:mrp_production_properties.model_procurement_order
+#. module: mrp_production_property
+#: model:ir.model,name:mrp_production_property.model_procurement_order
 msgid "Procurement"
 msgstr "Approvvigionamento"
