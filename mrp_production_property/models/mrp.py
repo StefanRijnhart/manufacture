@@ -1,34 +1,24 @@
-# -*- coding: utf-8 -*-
-# Copyright 2014 <alex.comba@agilebg.com>
-# License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+# coding: utf-8
+# Copyright 2012 - 2016 Odoo S.A.
+# License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl).
 from odoo import api, models, fields
 
 
 class MrpPropertyGroup(models.Model):
-    """
-    Group of mrp properties.
-    """
+    """ Group of mrp properties """
     _name = 'mrp.property.group'
     _description = 'Property Group'
 
-    name = fields.Char('Property Group', required=True)
+    name = fields.Char('Name', required=True)
     description = fields.Text('Description')
 
 
 class MrpProperty(models.Model):
-    """
-    Properties of mrp.
-    """
+    """ Property to control BOM selection from the sale order """
     _name = 'mrp.property'
-    _description = 'Property'
+    _description = 'MRP Property'
 
     name = fields.Char('Name', required=True)
-    composition = fields.Selection([('min', 'min'), ('max', 'max'),
-                                    ('plus', 'plus')],
-                                   'Properties composition', required=True,
-                                   help="Not used in computations, "
-                                        "for information purpose only.",
-                                   default='min')
     group_id = fields.Many2one('mrp.property.group', 'Property Group',
                                required=True)
     description = fields.Text('Description')
@@ -43,44 +33,39 @@ class MrpBom(models.Model):
                                     string='Properties')
 
     @api.model
+    def search(self, args, offset=0, limit=None, order=None, count=False):
+        """ If limit is set to 1 and property_ids is set in the context, search
+        a BoM which has all properties specified, or if you can not find one,
+        you return a BoM without any properties with the smallest sequence. """
+        check_properties = False
+        if limit == 1 and self.env.context.get('property_ids'):
+            check_properties = True
+            limit = None
+        boms = super(MrpBom, self).search(
+            args, offset=offset, limit=limit, order=order, count=count)
+        if check_properties:
+            bom_empty_prop = self.env['mrp.bom']
+            property_ids = set(self.env.context['property_ids'])
+            for bom in boms:
+                if bom.property_ids:
+                    if not set(bom.property_ids.ids) - property_ids:
+                        return bom
+                elif not bom_empty_prop:
+                    bom_empty_prop = bom
+            return bom_empty_prop
+        return boms
+
+    @api.model
     def _bom_find(self, product_tmpl=None, product=None, picking_type=None,
                   company_id=False):
-        property_ids = self._context.get('property_ids')
-        if property_ids:
-            if product:
-                if not product_tmpl:
-                    product_tmpl = product.product_tmpl_id
-                domain = ['|', ('product_id', '=', product.id), '&',
-                          ('product_id', '=', False),
-                          ('product_tmpl_id', '=', product_tmpl.id)]
-            elif product_tmpl:
-                domain = [('product_tmpl_id', '=', product_tmpl.id)]
-            else:
-                # neither product nor template, makes no sense to search
-                return False
-            if picking_type:
-                domain += ['|', ('picking_type_id', '=', picking_type.id),
-                           ('picking_type_id', '=', False)]
-            if company_id or self.env.context.get('company_id'):
-                domain += [('company_id', '=', company_id or
-                            self.env.context.get('company_id'))]
-
-            bom_ids = self.search(domain, order='sequence, product_id')
-            # Search a BoM which has all properties specified, or if you can
-            # not find one, you could
-            # pass a BoM without any properties with the smallest sequence
-            bom_empty_prop = False
-            for bom in bom_ids:
-                set_property = set(property_ids or [])
-                if not set(map(int, bom.property_ids or [])) - set_property:
-                    if not property_ids or bom.property_ids:
-                        return bom
-                    elif not bom_empty_prop:
-                        bom_empty_prop = bom
-            return bom_empty_prop
-        else:
-            return super(MrpBom, self)._bom_find(product_tmpl, product,
-                                                 picking_type, company_id)
+        """ If property_ids are set in the context at this point, add an
+        additional value in the context that triggers the filter on these
+        properties in this model's search method """
+        if self.env.context.get('property_ids'):
+            self = self.with_context(check_properties=True)
+        return super(MrpBom, self)._bom_find(
+            product_tmpl=product_tmpl, product=product,
+            picking_type=picking_type, company_id=company_id)
 
 
 class MrpProduction(models.Model):

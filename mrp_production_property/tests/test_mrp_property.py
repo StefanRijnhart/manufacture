@@ -13,12 +13,10 @@ class TestMrpProperty(common.TransactionCase):
             {'name': 'group test'})
         self.property_1 = self.env['mrp.property'].create({
             'name': 'property 1',
-            'composition': 'min',
             'group_id': self.prop_group_id.id,
         })
         self.property_2 = self.env['mrp.property'].create({
             'name': 'property 2',
-            'composition': 'plus',
             'group_id': self.prop_group_id.id,
         })
         self.manufacture = self.browse_ref('mrp.route_warehouse0_manufacture')

@@ -1,6 +1,7 @@
-# -*- coding: utf-8 -*-
+# coding: utf-8
+# Copyright 2012 - 2016 Odoo S.A.
 # Copyright 2017 Bima Wijaya
-# License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+# License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl).
 from odoo import api, fields, models
 
 
@@ -14,22 +15,19 @@ class ProcurementOrder(models.Model):
 
     @api.multi
     def _get_matching_bom(self):
-        res = super(ProcurementOrder, self.with_context(
-            property_ids=[p.id for p in self.property_ids])).\
-            _get_matching_bom()
-        return res
+        """ Inject property ids in the context, to be honoured in the
+        production model's search method """
+        return super(ProcurementOrder, self.with_context(
+            property_ids=self.property_ids.ids))._get_matching_bom()
 
     @api.multi
     def make_mo(self):
+        """ Pass the properties over to the production order """
         res = super(ProcurementOrder, self).make_mo()
-        production_obj = self.env['mrp.production']
         for procurement_id, produce_id in res.iteritems():
             procurement = self.browse(procurement_id)
-            production = production_obj.browse(produce_id)
-            vals = {
-                'property_ids': [
-                    (6, 0, [x.id for x in procurement.property_ids])
-                ]
-            }
-            production.write(vals)
+            production = self.env['mrp.production'].browse(produce_id)
+            production.write({
+                'property_ids': [(6, 0, procurement.property_ids.ids)],
+            })
         return res
