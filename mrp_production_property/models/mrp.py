@@ -28,8 +28,8 @@ class MrpBom(models.Model):
     _inherit = 'mrp.bom'
 
     property_ids = fields.Many2many('mrp.property',
-                                    'mrp_bom_property_rel',
-                                    'bom_id', 'property_id',
+                                    'mrp_bom_mrp_property_rel',
+                                    'mrp_bom_id', 'mrp_property_id',
                                     string='Properties')
 
     @api.model
